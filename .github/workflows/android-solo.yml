@@ -1,4 +1,4 @@
-name: Build Animania 0.6 APK - SOLO MOD
+name: Build Animania 0.6 APK - SOLO
 on:
   workflow_dispatch:
 
@@ -8,7 +8,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
+      - name: Change Package to SOLO
+        run: |
+          if [ -f export_presets.cfg ]; then
+            sed -i 's/package\/unique_name="[^"]*"/package\/unique_name="com.animania.solomod"/' export_presets.cfg || true
+            sed -i 's/application\/name="[^"]*"/application\/name="Animania Solo"/' export_presets.cfg || true
+            sed -i 's/name="[^"]*"/name="Animania Solo"/' export_presets.cfg || true
+            echo "Package changed for SOLO build"
+            cat export_presets.cfg | grep -A2 -B2 unique_name || true
+          fi
+
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v1
         with:
@@ -19,7 +29,8 @@ jobs:
       - name: Export APK
         run: |
           mkdir -p build
-          godot --headless --export-release "Android" build/Animania.apk || godot --headless --export "Android" build/Animania.apk
+          godot --headless --export-release "Android" build/Animania-Solo.apk || godot --headless --export "Android" build/Animania-Solo.apk
+          ls -lh build/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
