@@ -18,27 +18,25 @@ jobs:
           haxe-version: 4.3.3
       - name: Install Haxelib
         run: |
-          haxelib setup ~/haxelib
-          haxelib install lime 8.2.2 --quiet
-          haxelib install openfl 9.3.3 --quiet
-          haxelib install flixel 5.8.0 --quiet
-          haxelib install flixel-addons 3.2.2 --quiet
-          haxelib install flixel-ui 2.6.1 --quiet
-          haxelib install hscript 2.6.1 --quiet
-          haxelib install hxcpp 4.3.2 --quiet
-          haxelib install extension-androidtools --quiet
-          haxelib install hxCodec 3.0.1 --quiet
-          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit.git --quiet
-          haxelib git flxanimate https://github.com/ShadowMario/flxanimate --quiet
-          haxelib git hmp https://github.com/ShadowMario/HMP --quiet
-          haxelib install polymod --quiet
-          haxelib install actuate --quiet
-          haxelib install hxvlc --quiet
+          haxelib install lime
+          haxelib install openfl
+          haxelib install flixel
+          haxelib install flixel-addons
+          haxelib install flixel-ui
+          haxelib git hscript https://github.com/HaxeFoundation/hscript.git
+          haxelib install hxcpp
+          haxelib install extension-androidtools
+          haxelib install hxCodec
+          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit.git
+          haxelib git flxanimate https://github.com/ShadowMario/flxanimate
+          haxelib git hmp https://github.com/ShadowMario/HMP
+          haxelib install polymod
+          haxelib install actuate
+          haxelib install hxvlc
           haxelib list
-          haxelib run lime setup flixel --quiet
-          haxelib run lime setup -y --quiet
       - name: Setup Lime
         run: |
+          haxelib run lime setup flixel
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
           haxelib run lime config JAVA_HOME $JAVA_HOME
