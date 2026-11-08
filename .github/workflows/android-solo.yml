@@ -1,0 +1,39 @@
+name: Build Animania 0.6 APK - SOLO MOD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.6
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Haxelibs
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime
+          haxelib install openfl
+          haxelib install flixel
+
+      - name: Build APK
+        run: |
+          haxelib run lime build android -final
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Animania-0.6-SOLO-MOD
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
