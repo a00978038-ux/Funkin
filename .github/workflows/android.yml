@@ -19,16 +19,16 @@ jobs:
       - name: Install Haxelib
         run: |
           haxelib setup ~/haxelib
-          haxelib install lime 8.0.3 --always
-          haxelib install openfl 9.3.3 --always
-          haxelib install flixel 5.8.0 --always
-          haxelib install flixel-addons 3.2.2 --always
-          haxelib install flixel-ui 2.6.2 --always
-          haxelib install hscript 2.6.1 --always
-          haxelib install hxcpp 4.3.2 --always
+          haxelib install lime --always
+          haxelib install openfl --always
+          haxelib install flixel --always
+          haxelib install flixel-addons --always
+          haxelib install flixel-ui --always
+          haxelib install hscript --always
+          haxelib install hxcpp --always
           haxelib install polymod --always
           haxelib install actuate --always
-          haxelib install hxCodec 3.0.1 --always
+          haxelib install hxCodec --always
           haxelib git linc_luajit https://github.com/Sirox228/linc_luajit.git --always
           haxelib git flxanimate https://github.com/ShadowMario/flxanimate --always
           haxelib git hmp https://github.com/ShadowMario/HMP --always
