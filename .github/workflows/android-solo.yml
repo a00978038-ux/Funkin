@@ -17,12 +17,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Licenses
-        run: yes | sdkmanager --licenses
-
       - name: Set up Haxe 4.3.6
         uses: krdlab/setup-haxe@v1
         with:
@@ -31,33 +25,36 @@ jobs:
       - name: Install Haxelibs
         run: |
           haxelib setup ~/haxelib
-          haxelib install lime
-          haxelib install openfl
-          haxelib install flixel
-          haxelib install flixel-addons
-          haxelib install flixel-ui
-          haxelib install hscript
-          haxelib install hxcpp
-          haxelib install extension-androidtools
+          haxelib install lime --always
+          haxelib install openfl --always
+          haxelib install flixel --always
+          haxelib install flixel-addons --always
+          haxelib install flixel-ui --always
+          haxelib install hscript --always
+          haxelib install hxcpp --always
+          haxelib install extension-androidtools --always
           haxelib run lime setup -y
+          haxelib run lime setup android -y
 
-      - name: Change Package Name
+      - name: Change Package Name to SOLO
         run: |
-          sed -i 's/<app file=".*"/<app file="AnimaniaSOLO" package="com.animania.solomod" /' Project.xml || true
-          cat Project.xml | grep package
-
-      - name: Setup Lime
-        run: |
-          haxelib run lime setup android -y || true
-          haxelib run lime config ANDROID_SDK $ANDROID_SDK_ROOT
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_SDK_ROOT/ndk-bundle || true
+          echo "ANTES:"
+          grep -o 'package="[^"]*"' Project.xml || echo "no package"
+          sed -i 's/package="[^"]*"/package="com.animania.solomod"/' Project.xml || true
+          sed -i 's/<app file="[^"]*"/<app file="AnimaniaSOLO"/' Project.xml || true
+          echo "DESPUES:"
+          grep -o 'package="[^"]*"' Project.xml
+          cat Project.xml | head -20
 
       - name: Build APK
         run: |
-          haxelib run lime build android -final
+          haxelib run lime build android -final -verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Animania-0.6-SOLO-APK
-          path: export/release/android/bin/app/build/outputs/apk/debug/*.apk
+          path: |
+            export/release/android/bin/app/build/outputs/apk/debug/*.apk
+            export/release/android/bin/*.apk
+            export/**/*.apk
