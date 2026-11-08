@@ -25,12 +25,11 @@ jobs:
       - name: Install ALL Haxelibs
         run: |
           haxelib setup ~/haxelib
-          haxelib install lime 8.0.3 --always
-          haxelib install openfl 9.3.0 --always
-          haxelib install flixel 5.6.1 --always
-          haxelib install flixel-addons 3.2.2 --always
-          haxelib install flixel-ui 2.6.1 --always
-          haxelib install flixel-tools --always
+          haxelib install lime --always
+          haxelib install openfl --always
+          haxelib install flixel --always
+          haxelib install flixel-addons --always
+          haxelib install flixel-ui --always
           haxelib install hscript --always
           haxelib install hxcpp --always
           haxelib install hxCodec --always
@@ -39,16 +38,13 @@ jobs:
           haxelib install extension-androidtools --always
           haxelib install actuate --always
           haxelib install hxdiscord_rpc --always
-          haxelib git haxe-maven https://github.com/Romm1e/haxe-maven --always || true
-          haxelib git hxvlc https://github.com/MAJigsaw77/hxvlc --always || true
-          haxelib git hxcppia https://github.com/haxefoundation/hxcppia --always || true
           haxelib list
           haxelib run lime setup -y
           haxelib run lime setup android -y
 
       - name: Find and Change Package Name
         run: |
-          FILE=$(find . -name "Project.xml" -o -name "project.xml" | head -1)
+          FILE=$(find . -name "Project.xml" | head -1)
           echo "FILE: $FILE"
           if [ -n "$FILE" ]; then
             sed -i 's/package="[^"]*"/package="com.animania.solomod"/' "$FILE" || true
