@@ -1,0 +1,51 @@
+name: Build Oficial
+on: workflow_dispatch
+jobs:
+  buildAndroid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r21e
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.3
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.2.2 --quiet
+          haxelib install openfl 9.3.3 --quiet
+          haxelib install flixel 5.8.0 --quiet
+          haxelib install flixel-addons 3.2.2 --quiet
+          haxelib install flixel-ui 2.6.1 --quiet
+          haxelib install hscript 2.6.1 --quiet
+          haxelib install hxcpp 4.3.2 --quiet
+          haxelib install extension-androidtools --quiet
+          haxelib install hxCodec 3.0.1 --quiet
+          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit.git --quiet
+          haxelib git flxanimate https://github.com/ShadowMario/flxanimate --quiet
+          haxelib git hmp https://github.com/ShadowMario/HMP --quiet
+          haxelib install polymod --quiet
+          haxelib install actuate --quiet
+          haxelib install hxvlc --quiet
+          haxelib list
+          haxelib run lime setup flixel --quiet
+          haxelib run lime setup -y --quiet
+      - name: Setup Lime
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
+          haxelib run lime config JAVA_HOME $JAVA_HOME
+      - name: Compile
+        run: haxelib run lime build android -final
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Animania-APK
+          path: export/release/android/bin/app/build/outputs/apk/debug/*.apk
