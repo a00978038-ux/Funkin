@@ -18,21 +18,22 @@ jobs:
           haxe-version: 4.3.3
       - name: Install Haxelib
         run: |
-          haxelib install lime
-          haxelib install openfl
-          haxelib install flixel
-          haxelib install flixel-addons
-          haxelib install flixel-ui
-          haxelib git hscript https://github.com/HaxeFoundation/hscript.git
-          haxelib install hxcpp
-          haxelib install extension-androidtools
-          haxelib install hxCodec
-          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit.git
+          haxelib setup ~/haxelib
+          haxelib install lime --always || true
+          haxelib install openfl --always || true
+          haxelib install flixel --always || true
+          haxelib install flixel-addons --always || true
+          haxelib install flixel-ui --always || true
+          haxelib git hscript https://github.com/HaxeFoundation/hscript
+          haxelib install hxcpp --always || true
+          haxelib git extension-androidtools https://github.com/openfl/extension-androidtools || true
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec || haxelib install hxCodec --always || true
+          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit
           haxelib git flxanimate https://github.com/ShadowMario/flxanimate
           haxelib git hmp https://github.com/ShadowMario/HMP
-          haxelib install polymod
-          haxelib install actuate
-          haxelib install hxvlc
+          haxelib install polymod --always || true
+          haxelib install actuate --always || true
+          haxelib install hxvlc --always || haxelib git hxvlc https://github.com/MasterEric/hxvlc || true
           haxelib list
       - name: Setup Lime
         run: |
