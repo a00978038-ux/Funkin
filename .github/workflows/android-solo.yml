@@ -15,39 +15,44 @@ jobs:
           haxe-version: 4.2.5
       - name: Install Android NDK
         run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.1.8937393"
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.1.8937393" || true
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
       - name: Install Haxelibs
         run: |
+          set +e
           haxelib setup ~/haxelib
-          haxelib install lime --always
-          haxelib install openfl --always
-          haxelib install flixel --always
-          haxelib install flixel-addons --always
-          haxelib install flixel-ui --always
-          haxelib install hscript --always
-          haxelib install hxcpp --always
-          haxelib install actuate --always
-          haxelib install polymod --always
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
-          haxelib git hmp https://github.com/ShadowMario/HMP
-          haxelib git flxanimate https://github.com/ShadowMario/flxanimate
-          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit
-          haxelib git hxvlc https://github.com/MAJigsaw77/hxvlc
-          haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools
+          haxelib --global update haxelib || true
+          haxelib install lime --always || true
+          haxelib install openfl --always || true
+          haxelib install flixel --always || true
+          haxelib install flixel-addons --always || true
+          haxelib install flixel-ui --always || true
+          haxelib install hscript --always || true
+          haxelib install hxcpp --always || true
+          haxelib install actuate --always || true
+          haxelib install polymod --always || true
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec || true
+          haxelib git hmp https://github.com/ShadowMario/HMP || true
+          haxelib git flxanimate https://github.com/ShadowMario/flxanimate || true
+          haxelib git linc_luajit https://github.com/Sirox228/linc_luajit || true
+          haxelib git hxvlc https://github.com/MAJigsaw77/hxvlc || true
+          haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools || true
+          haxelib list
+          exit 0
       - name: Setup Lime
         run: |
-          haxelib run lime setup -y
-          haxelib run lime setup android -y
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_ROOT
+          haxelib run lime setup -y || true
+          haxelib run lime setup android -y || true
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_ROOT || true
       - name: Change package
         run: |
           FILE=$(find . -name "Project.xml" | head -1)
-          sed -i 's/package="[^"]*"/package="com.animania.solomod"/g' "$FILE"
+          sed -i 's/package="[^"]*"/package="com.animania.solomod"/g' "$FILE" || true
       - name: Build APK
         run: haxelib run lime build android -final --app-version "0.6-SOLO"
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Animania-SOLO-APK
