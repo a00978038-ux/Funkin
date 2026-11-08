@@ -1,4 +1,4 @@
-name: Build Animania 0.6 APK - SOLO
+name: Build Animania 0.6 APK - SOLO FINAL
 
 on:
   workflow_dispatch:
@@ -17,49 +17,53 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Haxe 4.3.6
         uses: krdlab/setup-haxe@v1
         with:
           haxe-version: 4.3.6
 
-      - name: Install Haxelibs from Project.xml
+      - name: Install Haxelibs FINAL
         run: |
           haxelib setup ~/haxelib
-          # instala base
-          haxelib install lime --always || true
-          haxelib install openfl --always || true
-          haxelib install flixel --always || true
-          haxelib install hxcpp --always || true
-          # lee todas las librerias que pide tu Project.xml e instalalas
-          FILE=$(find . -name "Project.xml" | head -1)
-          echo "Project: $FILE"
-          cat "$FILE" | grep haxelib | grep -o 'name="[^"]*"' | cut -d'"' -f2 | while read lib; do
-            echo "Installing $lib"
-            haxelib install "$lib" --always || haxelib git "$lib" "https://github.com/search?q=$lib" --always || true
-          done
-          # extras que siempre piden los FNF mods
-          haxelib install hmp --always || true
-          haxelib install hxCodec --always || true
-          haxelib install flxanimate --always || true
-          haxelib install linc_luajit --always || true
-          haxelib install extension-androidtools --always || true
+          haxelib install lime --quiet --always
+          haxelib install openfl --quiet --always
+          haxelib install flixel --quiet --always
+          haxelib install flixel-addons --quiet --always
+          haxelib install flixel-ui --quiet --always
+          haxelib install hscript --quiet --always
+          haxelib install hxcpp --quiet --always
+          haxelib install actuate --quiet --always
+          haxelib install polymod --quiet --always
+          haxelib install extension-androidtools --quiet --always
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec --always --quiet || true
+          haxelib git hmp https://github.com/MaybeWaffle/hmp --always --quiet || true
+          haxelib git flxanimate https://github.com/ShadowMario/flxanimate --always --quiet || true
+          haxelib git linc_luajit https://github.com/superpowers04/linc_luajit --always --quiet || true
+          haxelib git hxvlc https://github.com/MAJigsaw77/hxvlc --always --quiet || true
           haxelib list
           haxelib run lime setup -y
           haxelib run lime setup android -y
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_HOME/ndk/26.1.10909125 || true
 
-      - name: Change Package Name
+      - name: Change Package to SOLO
         run: |
           FILE=$(find . -name "Project.xml" | head -1)
-          sed -i 's/package="[^"]*"/package="com.animania.solomod"/' "$FILE" || true
+          sed -i 's/package="[^"]*"/package="com.animania.solomod"/g' "$FILE"
+          echo "Package cambiado a com.animania.solomod"
 
       - name: Build APK
         run: |
-          haxelib run lime build android -final
+          haxelib run lime build android -final --app-version="0.6-SOLO"
 
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Animania-0.6-SOLO-APK
+          name: Animania-SOLO-0.6-APK
           path: |
             export/release/android/bin/app/build/outputs/apk/debug/*.apk
             export/release/android/bin/*.apk
