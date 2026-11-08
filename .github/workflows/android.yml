@@ -1,0 +1,36 @@
+name: Build Animania 0.6 APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Unzip all mod parts
+        run: |
+          cd example_mods
+          mkdir -p Animania
+          for f in *.zip; do unzip -o "$f" -d Animania; done
+          rm -f *.zip
+          ls -R Animania
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.6
+      - name: Install HMM
+        run: |
+          haxelib --global-update hmm --quiet
+          haxelib --global-install hmm --quiet
+          hmm install --quiet
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r21e
+      - name: Build APK
+        run: haxelib run lime build android -final
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Animania-APK
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
