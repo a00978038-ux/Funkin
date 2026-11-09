@@ -27,14 +27,16 @@ jobs:
           mkdir -p mods
           shopt -s nullglob
 
-          echo "Archivos de Animania:"
+          echo "Archivos iniciales:"
           ls -lah mods/
 
-          # Unir archivos .001 .002 .003
+          # Unir partes .001 .002 .003
           PARTS=(mods/*.001)
 
           if [ ${#PARTS[@]} -gt 0 ]; then
             PREFIX="${PARTS[0]%.001}"
+
+            echo "Uniendo partes de Animania..."
 
             for EXT in 001 002 003; do
               if [ ! -f "${PREFIX}.${EXT}" ]; then
@@ -47,27 +49,28 @@ jobs:
                 "${PREFIX}.002" \
                 "${PREFIX}.003" > mods/Animania.zip
 
+            echo "Verificando ZIP..."
             unzip -tq mods/Animania.zip
           fi
 
-          # Extraer ZIPs normales o partes independientes
+          # Extraer archivos ZIP
           ZIP_FILES=(mods/*.zip)
 
-          if [ ${#ZIP_FILES[@]} -eq 0 ]; then
-            echo "No se encontraron ZIPs para extraer."
-          else
+          if [ ${#ZIP_FILES[@]} -gt 0 ]; then
             for FILE in "${ZIP_FILES[@]}"; do
-              echo "Extrayendo $FILE"
+              echo "Extrayendo: $FILE"
               unzip -o "$FILE" -d mods/
             done
+          else
+            echo "No hay archivos ZIP adicionales."
           fi
 
-          echo "Contenido extraído:"
-          find mods -maxdepth 4 -type f | head -n 150
-
-          # Eliminar comprimidos después de extraer
+          # Limpiar comprimidos
           rm -f mods/*.zip
           rm -f mods/*.001 mods/*.002 mods/*.003
+
+          echo "Contenido de mods:"
+          find mods -maxdepth 4 -type f | head -n 150
 
       # ==========================================
       # JAVA 17
@@ -82,30 +85,29 @@ jobs:
       # ANDROID SDK
       # ==========================================
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+          accept-android-sdk-licenses: true
 
       # ==========================================
-      # ANDROID NDK OFICIAL RECOMENDADO
+      # ANDROID SDK COMPONENTS + NDK
       # ==========================================
       - name: Install Android SDK components
         shell: bash
         run: |
           set -e
 
-          yes | sdkmanager --licenses || true
-
           sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "platforms;android-29" \
             "build-tools;35.0.0" \
+            "platforms;android-29" \
+            "platforms;android-35" \
             "ndk;29.0.13113456"
 
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456"
 
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
 
       # ==========================================
       # HAXE
@@ -116,7 +118,7 @@ jobs:
           haxe-version: '4.3.3'
 
       # ==========================================
-      # HMM + DEPENDENCIES
+      # INSTALL HMM + DEPENDENCIES
       # ==========================================
       - name: Install HMM and dependencies
         shell: bash
@@ -126,12 +128,13 @@ jobs:
           haxelib setup /home/runner/haxelib
 
           haxelib --global install hmm --quiet
+
           haxelib --global run hmm setup
 
           hmm install
 
       # ==========================================
-      # LIME
+      # SETUP LIME
       # ==========================================
       - name: Setup Lime
         shell: bash
@@ -139,13 +142,15 @@ jobs:
           set -e
 
           haxelib run lime config ANDROID_SDK "$ANDROID_HOME"
+
           haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_NDK_ROOT"
+
           haxelib run lime config JAVA_HOME "$JAVA_HOME"
 
           haxelib run lime setup -alias -y
 
       # ==========================================
-      # BUILD ANDROID
+      # BUILD APK
       # ==========================================
       - name: Build APK
         shell: bash
@@ -154,16 +159,20 @@ jobs:
 
           haxelib run lime test android
 
-          echo "Buscando APK..."
+          echo "Buscando APK generado..."
 
-          find export -type f -name "*.apk" -print
+          mkdir -p artifacts
 
-          APK_COUNT=$(find export -type f -name "*.apk" | wc -l)
+          find export -type f -name "*.apk" \
+            -exec cp {} artifacts/ \;
 
-          if [ "$APK_COUNT" -eq 0 ]; then
-            echo "ERROR: No se encontró ningún APK."
+          if ! ls artifacts/*.apk >/dev/null 2>&1; then
+            echo "ERROR: No se generó ningún APK."
             exit 1
           fi
+
+          echo "APK generado correctamente:"
+          ls -lh artifacts/
 
       # ==========================================
       # UPLOAD APK
@@ -172,7 +181,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Funkin-0.8.7-Animania-APK
-          path: export/**/*.apk
+          path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
           
