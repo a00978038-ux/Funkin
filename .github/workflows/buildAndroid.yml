@@ -17,7 +17,7 @@ jobs:
           haxelib setup /home/runner/haxelib
           haxelib install hxp --quiet
           haxelib install format --quiet
-          haxelib install lime 8.0.3 --quiet
+          haxelib install lime 8.0.0 --quiet
           haxelib install openfl 9.3.3 --quiet
           haxelib install flixel 5.7.0 --quiet
           haxelib git flixel-addons https://github.com/HaxeFlixel/flixel-addons --quiet
