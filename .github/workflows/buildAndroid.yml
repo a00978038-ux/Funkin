@@ -1,4 +1,4 @@
-name: buildAndroid 0.8.8 FIX ZIP MOD
+name: buildAndroid 0.8.8 ANIMANIA 3 PARTS
 on: workflow_dispatch
 jobs:
   build:
@@ -8,9 +8,24 @@ jobs:
         with:
           submodules: recursive
           
-      - name: Unzip Mods Animania
+      - name: JOIN 3 ZIPs + Unzip Animania
         run: |
-          for zip in mods/*.zip mods/**/*.zip; do [ -f "$zip" ] && unzip -o "$zip" -d mods/ && rm "$zip"; done
+          ls -lh mods/
+          # Si son .001 .002 .003 los junta en un solo zip
+          if ls mods/*.001 1>/dev/null 2>&1; then
+            echo "Juntando partes .001 .002 .003..."
+            cat mods/*.001 mods/*.002 mods/*.003 > mods/Animania.zip 2>/dev/null || cat mods/Animania.zip.* > mods/Animania.zip
+          fi
+          # Si son part1 part2 part3 tambien los junta
+          if ls mods/*part*.zip 1>/dev/null 2>&1; then
+            echo "Juntando partes part1 part2 part3..."
+            # por si son zips separados con carpetas adentro, solo los descomprimimos todos
+            for f in mods/*.zip; do unzip -o "$f" -d mods/ || true; done
+          else
+            unzip -o mods/Animania.zip -d mods/ || true
+          fi
+          rm -f mods/*.zip mods/*.001 mods/*.002 mods/*.003
+          ls -R mods/ | head -n 100
 
       - uses: actions/setup-java@v4
         with:
@@ -49,5 +64,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Funkin-Animania-APK
+          name: Funkin-Animania-3PARTS-APK
           path: export/release/android/bin/app/build/outputs/apk/debug
