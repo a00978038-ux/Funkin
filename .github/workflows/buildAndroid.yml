@@ -15,6 +15,8 @@ jobs:
       - name: Install Libs
         run: |
           haxelib setup /home/runner/haxelib
+          haxelib install hxp --quiet
+          haxelib install format --quiet
           haxelib install lime 8.2.0 --quiet
           haxelib install openfl 9.4.0 --quiet
           haxelib install flixel 5.8.0 --quiet
@@ -22,10 +24,10 @@ jobs:
           haxelib install flixel-ui --quiet
           haxelib install hscript --quiet
           haxelib install hxcpp 4.3.2 --quiet
-          haxelib install format --quiet
+          haxelib list
       - name: Rebuild
         run: |
-          haxelib run lime setup -alias -y
+          echo y | haxelib run lime setup -alias -y
           haxelib run lime rebuild tools
       - name: Build APK
         run: haxelib run lime build android -final
