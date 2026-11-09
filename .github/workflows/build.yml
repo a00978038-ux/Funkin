@@ -22,18 +22,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/haxelib
-          key: haxelib-cache-${{ hashFiles('Project.xml') }}
+          key: haxelib-cache-v5
           restore-keys: haxelib-cache-
 
       - name: Setup Lime
         run: |
           haxelib setup ~/haxelib
-          haxelib install lime --always
-          haxelib install openfl --always
-          haxelib install flixel --always
-          haxelib install hxp --always
-          haxelib install hxcpp --always
-          haxelib run lime setup
+          haxelib install lime 7.9.0 --always --quiet
+          haxelib set lime 7.9.0
+          haxelib install openfl 9.2.2 --always --quiet
+          haxelib install flixel 5.6.1 --always --quiet
+          haxelib install flixel-addons 3.2.2 --always --quiet
+          haxelib install flixel-ui 2.6.1 --always --quiet
+          haxelib install hscript 2.6.0 --always --quiet
+          haxelib install hxcpp 4.3.2 --always --quiet
+          haxelib install hxp 1.3.0 --always --quiet
+          haxelib list
+          haxelib run lime setup -alias -y
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
 
       - name: Compile
         run: haxelib run lime build android -final
@@ -43,9 +50,10 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/haxelib
-          key: haxelib-cache-${{ hashFiles('Project.xml') }}
+          key: haxelib-cache-v5
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: APK-OFICIAL
