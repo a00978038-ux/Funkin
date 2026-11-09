@@ -5,13 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
+      - uses: krdlab/setup-haxe@v1
         with:
           haxe-version: 4.3.3
       - name: Install Libs
@@ -24,11 +22,11 @@ jobs:
           haxelib install flixel-ui --quiet
           haxelib install hscript --quiet
           haxelib install hxcpp 4.3.2 --quiet
+          haxelib install format --quiet
       - name: Rebuild
         run: |
           haxelib run lime setup -alias -y
-          haxelib run lime rebuild tools -y
-          haxelib run lime rebuild hxcpp -y
+          haxelib run lime rebuild tools
       - name: Build APK
         run: haxelib run lime build android -final
       - name: Upload APK
