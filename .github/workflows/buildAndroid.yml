@@ -1,187 +1,44 @@
 
-name: buildAndroid 0.8.7 ANIMANIA 3 PARTS
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
       # ==========================================
-      # CHECKOUT
+      # INSTALL LINUX BUILD DEPENDENCIES
       # ==========================================
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      # ==========================================
-      # JOIN 3 ZIPs + UNZIP ANIMANIA
-      # ==========================================
-      - name: JOIN 3 ZIPs + Unzip Animania
-        shell: bash
+      - name: Install Linux dependencies
         run: |
-          set -e
-          mkdir -p mods
-          shopt -s nullglob
+          sudo apt-get update
 
-          echo "Archivos iniciales:"
-          ls -lah mods/
-
-          # Unir partes .001 .002 .003
-          PARTS=(mods/*.001)
-
-          if [ ${#PARTS[@]} -gt 0 ]; then
-            PREFIX="${PARTS[0]%.001}"
-
-            echo "Uniendo partes de Animania..."
-
-            for EXT in 001 002 003; do
-              if [ ! -f "${PREFIX}.${EXT}" ]; then
-                echo "ERROR: Falta ${PREFIX}.${EXT}"
-                exit 1
-              fi
-            done
-
-            cat "${PREFIX}.001" \
-                "${PREFIX}.002" \
-                "${PREFIX}.003" > mods/Animania.zip
-
-            echo "Verificando ZIP..."
-            unzip -tq mods/Animania.zip
-          fi
-
-          # Extraer archivos ZIP
-          ZIP_FILES=(mods/*.zip)
-
-          if [ ${#ZIP_FILES[@]} -gt 0 ]; then
-            for FILE in "${ZIP_FILES[@]}"; do
-              echo "Extrayendo: $FILE"
-              unzip -o "$FILE" -d mods/
-            done
-          else
-            echo "No hay archivos ZIP adicionales."
-          fi
-
-          # Limpiar comprimidos
-          rm -f mods/*.zip
-          rm -f mods/*.001 mods/*.002 mods/*.003
-
-          echo "Contenido de mods:"
-          find mods -maxdepth 4 -type f | head -n 150
+          sudo apt-get install -y \
+            build-essential \
+            g++ \
+            gcc \
+            g++-multilib \
+            gcc-multilib \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libasound2-dev \
+            libx11-dev \
+            libxext-dev \
+            libxi-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libpulse-dev
 
       # ==========================================
-      # JAVA 17
+      # FIX FUNKIN LIME NDLL
       # ==========================================
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      # ==========================================
-      # ANDROID SDK
-      # ==========================================
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools'
-          accept-android-sdk-licenses: true
-
-      # ==========================================
-      # ANDROID SDK COMPONENTS + NDK
-      # ==========================================
-      - name: Install Android SDK components
+      - name: FIX lime.ndll
         shell: bash
         run: |
           set -e
 
-          sdkmanager \
-            "build-tools;35.0.0" \
-            "platforms;android-29" \
-            "platforms;android-35" \
-            "ndk;29.0.13113456"
+          echo "Reinstalando Lime de Funkin..."
 
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          hmm reinstall -f lime
 
-          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
+          echo "Reconstruyendo Lime para Linux 64 bits..."
 
-      # ==========================================
-      # HAXE
-      # ==========================================
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: '4.3.3'
+          haxelib run lime rebuild cpp -64 -release -clean
 
-      # ==========================================
-      # INSTALL HMM + DEPENDENCIES
-      # ==========================================
-      - name: Install HMM and dependencies
-        shell: bash
-        run: |
-          set -e
+          echo "Comprobando biblioteca..."
 
-          haxelib setup /home/runner/haxelib
-
-          haxelib --global install hmm --quiet
-
-          haxelib --global run hmm setup
-
-          hmm install
-
-      # ==========================================
-      # SETUP LIME
-      # ==========================================
-      - name: Setup Lime
-        shell: bash
-        run: |
-          set -e
-
-          haxelib run lime config ANDROID_SDK "$ANDROID_HOME"
-
-          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_NDK_ROOT"
-
-          haxelib run lime config JAVA_HOME "$JAVA_HOME"
-
-          haxelib run lime setup -alias -y
-
-      # ==========================================
-      # BUILD APK
-      # ==========================================
-      - name: Build APK
-        shell: bash
-        run: |
-          set -e
-
-          haxelib run lime test android
-
-          echo "Buscando APK generado..."
-
-          mkdir -p artifacts
-
-          find export -type f -name "*.apk" \
-            -exec cp {} artifacts/ \;
-
-          if ! ls artifacts/*.apk >/dev/null 2>&1; then
-            echo "ERROR: No se generó ningún APK."
-            exit 1
-          fi
-
-          echo "APK generado correctamente:"
-          ls -lh artifacts/
-
-      # ==========================================
-      # UPLOAD APK
-      # ==========================================
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Funkin-0.8.7-Animania-APK
-          path: artifacts/*.apk
-          if-no-files-found: error
-          retention-days: 7
+          find .haxelib -iname "lime.ndll" -print || true
           
