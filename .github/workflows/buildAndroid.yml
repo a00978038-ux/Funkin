@@ -1,46 +1,37 @@
 name: buildAndroid
 on: workflow_dispatch
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
+          distribution: temurin
+          java-version: 17
+      - uses: krdlab/setup-haxe@v1
         with:
           haxe-version: 4.3.3
-          
       - name: Install Haxelibs
         run: |
           haxelib setup ~/haxelib
-          haxelib install lime 8.2.0 --quiet
-          haxelib install openfl 9.4.0 --quiet
-          haxelib install flixel 5.8.0 --quiet
-          haxelib git flixel-addons https://github.com/HaxeFlixel/flixel-addons --quiet
-          haxelib install flixel-tools --quiet
-          haxelib install flixel-ui --quiet
-          haxelib install hscript --quiet
-          haxelib install hxcpp 4.3.2 --quiet
+          haxelib install lime 8.2.0
+          haxelib install openfl 9.4.0
+          haxelib install flixel 5.8.0
+          haxelib git flixel-addons https://github.com/HaxeFlixel/flixel-addons
+          haxelib install flixel-ui
+          haxelib install hscript
+          haxelib install hxcpp 4.3.2
           haxelib list
-          
-      - name: Fix lime.ndll - Rebuild Lime
+      - name: Fix lime
         run: |
           haxelib run lime setup
           haxelib run lime rebuild tools
-          haxelib run lime rebuild cpp -m64
-          
-      - name: Build APK
-        run: |
-          haxelib run lime build android -final -Ddebug
-          
-      - name: Upload APK
+          haxelib run lime rebuild hxcpp -m64
+          haxelib run lime rebuild android
+      - name: Build
+        run: haxelib run lime build android -final
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: FunkinAPK
