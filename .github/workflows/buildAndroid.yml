@@ -1,68 +1,178 @@
-name: buildAndroid 0.8.8 ANIMANIA 3 PARTS
-on: workflow_dispatch
+
+name: buildAndroid 0.8.7 ANIMANIA 3 PARTS
+
+on:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      # ==========================================
+      # CHECKOUT
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
-          
-      - name: JOIN 3 ZIPs + Unzip Animania
-        run: |
-          ls -lh mods/
-          # Si son .001 .002 .003 los junta en un solo zip
-          if ls mods/*.001 1>/dev/null 2>&1; then
-            echo "Juntando partes .001 .002 .003..."
-            cat mods/*.001 mods/*.002 mods/*.003 > mods/Animania.zip 2>/dev/null || cat mods/Animania.zip.* > mods/Animania.zip
-          fi
-          # Si son part1 part2 part3 tambien los junta
-          if ls mods/*part*.zip 1>/dev/null 2>&1; then
-            echo "Juntando partes part1 part2 part3..."
-            # por si son zips separados con carpetas adentro, solo los descomprimimos todos
-            for f in mods/*.zip; do unzip -o "$f" -d mods/ || true; done
-          else
-            unzip -o mods/Animania.zip -d mods/ || true
-          fi
-          rm -f mods/*.zip mods/*.001 mods/*.002 mods/*.003
-          ls -R mods/ | head -n 100
 
-      - uses: actions/setup-java@v4
+      # ==========================================
+      # JOIN 3 ZIPs + UNZIP ANIMANIA
+      # ==========================================
+      - name: JOIN 3 ZIPs + Unzip Animania
+        shell: bash
+        run: |
+          set -e
+          mkdir -p mods
+          shopt -s nullglob
+
+          echo "Archivos de Animania:"
+          ls -lah mods/
+
+          # Unir archivos .001 .002 .003
+          PARTS=(mods/*.001)
+
+          if [ ${#PARTS[@]} -gt 0 ]; then
+            PREFIX="${PARTS[0]%.001}"
+
+            for EXT in 001 002 003; do
+              if [ ! -f "${PREFIX}.${EXT}" ]; then
+                echo "ERROR: Falta ${PREFIX}.${EXT}"
+                exit 1
+              fi
+            done
+
+            cat "${PREFIX}.001" \
+                "${PREFIX}.002" \
+                "${PREFIX}.003" > mods/Animania.zip
+
+            unzip -tq mods/Animania.zip
+          fi
+
+          # Extraer ZIPs normales o partes independientes
+          ZIP_FILES=(mods/*.zip)
+
+          if [ ${#ZIP_FILES[@]} -eq 0 ]; then
+            echo "No se encontraron ZIPs para extraer."
+          else
+            for FILE in "${ZIP_FILES[@]}"; do
+              echo "Extrayendo $FILE"
+              unzip -o "$FILE" -d mods/
+            done
+          fi
+
+          echo "Contenido extraído:"
+          find mods -maxdepth 4 -type f | head -n 150
+
+          # Eliminar comprimidos después de extraer
+          rm -f mods/*.zip
+          rm -f mods/*.001 mods/*.002 mods/*.003
+
+      # ==========================================
+      # JAVA 17
+      # ==========================================
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-      - uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r21e
-      - uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: 4.3.3
+          java-version: '17'
 
-      - name: Install hmm
+      # ==========================================
+      # ANDROID SDK
+      # ==========================================
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ==========================================
+      # ANDROID NDK OFICIAL RECOMENDADO
+      # ==========================================
+      - name: Install Android SDK components
+        shell: bash
         run: |
+          set -e
+
+          yes | sdkmanager --licenses || true
+
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "platforms;android-29" \
+            "build-tools;35.0.0" \
+            "ndk;29.0.13113456"
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456"
+
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/29.0.13113456" >> "$GITHUB_ENV"
+
+      # ==========================================
+      # HAXE
+      # ==========================================
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: '4.3.3'
+
+      # ==========================================
+      # HMM + DEPENDENCIES
+      # ==========================================
+      - name: Install HMM and dependencies
+        shell: bash
+        run: |
+          set -e
+
           haxelib setup /home/runner/haxelib
+
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
+
           hmm install
 
-      - name: FIX lime.ndll
+      # ==========================================
+      # LIME
+      # ==========================================
+      - name: Setup Lime
+        shell: bash
         run: |
-          haxelib run lime rebuild linux -release
-          haxelib run lime rebuild tools -release
+          set -e
 
-      - name: Setup Android
-        run: |
+          haxelib run lime config ANDROID_SDK "$ANDROID_HOME"
+          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_NDK_ROOT"
+          haxelib run lime config JAVA_HOME "$JAVA_HOME"
+
           haxelib run lime setup -alias -y
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_ROOT
-          haxelib run lime config JAVA_HOME $JAVA_HOME
-          haxelib run lime rebuild hxcpp -clean
 
+      # ==========================================
+      # BUILD ANDROID
+      # ==========================================
       - name: Build APK
-        run: haxelib run lime build android -final
+        shell: bash
+        run: |
+          set -e
 
+          haxelib run lime test android
+
+          echo "Buscando APK..."
+
+          find export -type f -name "*.apk" -print
+
+          APK_COUNT=$(find export -type f -name "*.apk" | wc -l)
+
+          if [ "$APK_COUNT" -eq 0 ]; then
+            echo "ERROR: No se encontró ningún APK."
+            exit 1
+          fi
+
+      # ==========================================
+      # UPLOAD APK
+      # ==========================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Funkin-Animania-3PARTS-APK
-          path: export/release/android/bin/app/build/outputs/apk/debug
+          name: Funkin-0.8.7-Animania-APK
+          path: export/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
+          
